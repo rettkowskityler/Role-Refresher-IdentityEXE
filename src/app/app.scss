@@ -1,0 +1,131 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--spds-surface-0, #f8fafc);
+}
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Content area
+// ─────────────────────────────────────────────────────────────────────────────
+
+.shell-content {
+  flex: 1;
+  min-width: 0;
+  background: #f8fafc;
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+
+  &__header {
+    margin-bottom: 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  &__header-left {
+    .brand-bar {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+
+      .brand-logo {
+        height: 2.25rem;
+        width: auto;
+        display: block;
+        transition: transform 0.2s ease;
+
+        &:hover {
+          transform: translateY(-1px);
+        }
+      }
+
+      .brand-divider {
+        width: 1px;
+        height: 2.25rem;
+        background: #cbd5e1;
+      }
+
+      .brand-text {
+        display: flex;
+        flex-direction: column;
+      }
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #02081b;
+      letter-spacing: -0.02em;
+    }
+
+    .shell-subtitle {
+      font-size: 0.85rem;
+      color: #5184c4;
+      font-weight: 500;
+    }
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__context {
+    color: #475569;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: #ffffff;
+    padding: 0.4rem 0.85rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  }
+
+  &__card {
+    flex: 1;
+    background: transparent;
+  }
+}
+
+.shell-footer {
+  margin-top: 3rem;
+  padding: 1.5rem 0 1rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  &__inner {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.825rem;
+    color: #64748b;
+    font-weight: 500;
+
+    .footer-icon {
+      height: 1.25rem;
+      width: auto;
+      display: block;
+    }
+
+    .footer-brand {
+      font-weight: 700;
+      color: #02081b;
+    }
+  }
+}

@@ -1,0 +1,504 @@
+<div class="role-refresher">
+  <!-- Top Banner / Headline -->
+  <div class="app-banner">
+    <div class="app-banner__info">
+      <div class="app-banner__badge-row">
+        <span class="custom-chip custom-chip--brand">
+          <img src="./branding/IdentityEXE2-09.svg" alt="IdentityEXE Mark" class="chip-logo-mark" />
+          IdentityEXE Blueprint
+        </span>
+        <span class="custom-chip custom-chip--cyan">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          SailPoint UI Plugin
+        </span>
+        <span class="custom-chip custom-chip--muted">Targeted Identity Refresher</span>
+      </div>
+      <h1 class="app-banner__title">Role Refresher & "Apply Changes" Simulator</h1>
+      <p class="app-banner__subtitle">
+        Eliminate the blind risk of SailPoint's "Apply Changes" button. Preview membership deltas (+Gain vs -Lose) against assignment criteria, audit deprovisioning risks, and dispatch targeted identity refreshes.
+      </p>
+    </div>
+
+    @if (plugin.context(); as ctx) {
+      <div class="app-banner__context">
+        <div class="context-item">
+          <span class="context-label">Tenant</span>
+          <span class="context-value">{{ ctx.tenant.org }}</span>
+        </div>
+        <div class="context-item">
+          <span class="context-label">Admin Session</span>
+          <span class="context-value">{{ ctx.user.displayName }}</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Error Alert -->
+  @if (error()) {
+    <div class="alert-box alert-box--danger">
+      <div class="alert-box__icon">
+        <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      <div class="alert-box__content">
+        <strong>Error occurred:</strong>
+        <p>{{ error() }}</p>
+      </div>
+      <button class="alert-box__close" (click)="error.set('')" aria-label="Dismiss error">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+  }
+
+  <!-- Task Execution Success Banner -->
+  @if (lastProcessResult(); as res) {
+    <div class="alert-box alert-box--success">
+      <div class="alert-box__icon">
+        <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+      </div>
+      <div class="alert-box__content">
+        <strong>Targeted Identity Processing Dispatched Successfully!</strong>
+        <p>
+          Job ID: <code>{{ res.taskId }}</code> &middot; Recalculating access for <strong>{{ res.count }}</strong> identity/identities &middot; Dispatched at {{ res.timestamp }}
+        </p>
+      </div>
+      <button class="alert-box__close" (click)="lastProcessResult.set(null)" aria-label="Dismiss message">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+  }
+
+  <!-- STEP 1: Role Selector Card -->
+  <div class="panel-card">
+    <div class="panel-card__header">
+      <div class="step-badge">1</div>
+      <div>
+        <h2 class="panel-card__title">Select Role to Simulate</h2>
+        <p class="panel-card__desc">Choose an Identity Security Cloud role to inspect its assignment criteria and calculate membership diffs.</p>
+      </div>
+    </div>
+
+    <div class="selector-row">
+      <div class="selector-container">
+        @if (loadingRoles()) {
+          <p-skeleton height="2.8rem" width="100%" />
+        } @else {
+          <p-select
+            [options]="roles()"
+            optionLabel="name"
+            optionValue="id"
+            [ngModel]="selectedRoleId()"
+            (onChange)="onRoleChange($event.value)"
+            [filter]="true"
+            filterBy="name"
+            placeholder="Select a role to inspect..."
+            styleClass="role-select"
+            [showClear]="false"
+          >
+            <ng-template #item let-role>
+              <div class="role-dropdown-item">
+                <div class="role-dropdown-item__top">
+                  <span class="role-dropdown-item__name">{{ role.name }}</span>
+                  <p-tag
+                    [value]="role.enabled ? 'Enabled' : 'Disabled'"
+                    [severity]="role.enabled ? 'success' : 'secondary'"
+                  />
+                </div>
+                <div class="role-dropdown-item__desc">
+                  {{ role.description || 'No description provided' }}
+                </div>
+              </div>
+            </ng-template>
+          </p-select>
+        }
+      </div>
+
+      <button
+        class="refresh-btn"
+        (click)="loadInitialData()"
+        [disabled]="loadingRoles() || loadingEvaluation()"
+        title="Reload roles and sources"
+      >
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        Reload
+      </button>
+    </div>
+
+    <!-- Active Role Details Bar -->
+    @if (selectedRole(); as role) {
+      <div class="role-details-bar">
+        <div class="role-prop">
+          <span class="role-prop__label">Status</span>
+          <p-tag [value]="role.enabled ? 'Enabled' : 'Disabled'" [severity]="role.enabled ? 'success' : 'warn'" />
+        </div>
+        <div class="role-prop">
+          <span class="role-prop__label">Type</span>
+          <p-tag [value]="role.membershipType || 'STANDARD'" severity="info" />
+        </div>
+        @if (role.owner) {
+          <div class="role-prop">
+            <span class="role-prop__label">Owner</span>
+            <span class="role-prop__val">{{ role.owner.name }}</span>
+          </div>
+        }
+        <div class="role-prop">
+          <span class="role-prop__label">Access Profiles</span>
+          <span class="role-prop__val">{{ role.accessProfilesCount }} profiles</span>
+        </div>
+        <div class="role-prop">
+          <span class="role-prop__label">Role ID</span>
+          <code class="role-prop__code">{{ role.id }}</code>
+        </div>
+      </div>
+
+      <!-- Criteria Inspector Box -->
+      <div class="criteria-box">
+        <div class="criteria-box__header">
+          <span class="criteria-box__tag">Assignment Criteria</span>
+          <span class="criteria-box__summary">{{ criteriaSummary() }}</span>
+        </div>
+        @if (role.description) {
+          <p class="criteria-box__note">{{ role.description }}</p>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- STEP 2: KPI Metrics & Change Summary -->
+  @if (selectedRole()) {
+    <div class="metrics-grid">
+      <!-- GAIN CARD -->
+      <div class="metric-card metric-card--gain">
+        <div class="metric-card__header">
+          <span class="metric-card__title">Will Gain Role</span>
+          <span class="metric-card__badge">+ Add</span>
+        </div>
+        <div class="metric-card__number">
+          @if (loadingEvaluation()) {
+            <p-skeleton width="3.5rem" height="2.5rem" />
+          } @else {
+            {{ gainCount() }}
+          }
+        </div>
+        <p class="metric-card__hint">Users meeting criteria who do not yet have the role assigned</p>
+      </div>
+
+      <!-- LOSE CARD -->
+      <div class="metric-card metric-card--lose" [class.metric-card--alert]="loseCount() > 0">
+        <div class="metric-card__header">
+          <span class="metric-card__title">Will Lose Role</span>
+          <span class="metric-card__badge">- Revoke</span>
+        </div>
+        <div class="metric-card__number">
+          @if (loadingEvaluation()) {
+            <p-skeleton width="3.5rem" height="2.5rem" />
+          } @else {
+            {{ loseCount() }}
+          }
+        </div>
+        <p class="metric-card__hint">
+          @if (loseCount() > 0) {
+            <strong class="text-danger inline-alert-title">
+              <svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              Deprovisioning Risk:
+            </strong> Users with role who fail criteria
+          } @else {
+            Zero deprovisioning detected
+          }
+        </p>
+      </div>
+
+      <!-- RETAINED CARD -->
+      <div class="metric-card metric-card--retained">
+        <div class="metric-card__header">
+          <span class="metric-card__title">Retained Members</span>
+          <span class="metric-card__badge">= Active</span>
+        </div>
+        <div class="metric-card__number">
+          @if (loadingEvaluation()) {
+            <p-skeleton width="3.5rem" height="2.5rem" />
+          } @else {
+            {{ retainedCount() }}
+          }
+        </div>
+        <p class="metric-card__hint">Current members who still satisfy assignment criteria</p>
+      </div>
+
+      <!-- NET DELTA CARD -->
+      <div class="metric-card metric-card--delta">
+        <div class="metric-card__header">
+          <span class="metric-card__title">Net Role Delta</span>
+          <span class="metric-card__badge">Net</span>
+        </div>
+        <div class="metric-card__number" [class.text-gain]="netChange() > 0" [class.text-lose]="netChange() < 0">
+          @if (loadingEvaluation()) {
+            <p-skeleton width="3.5rem" height="2.5rem" />
+          } @else {
+            {{ netChange() > 0 ? '+' + netChange() : netChange() }}
+          }
+        </div>
+        <p class="metric-card__hint">Overall change in role membership population</p>
+      </div>
+    </div>
+
+    <!-- STEP 3: Action Execution Bar -->
+    <div class="action-bar">
+      <div class="action-bar__info">
+        <span class="action-bar__icon">
+          <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+        </span>
+        <div>
+          <h3 class="action-bar__title">Targeted Identity Refresh</h3>
+          <p class="action-bar__desc">
+            Safely execute identity processing via <code>POST /identities/v1/process</code> for selected users without applying changes globally.
+          </p>
+        </div>
+      </div>
+
+      <div class="action-bar__actions">
+        <button
+          class="btn btn--secondary"
+          (click)="processSelectedIdentities('ALL_IMPACTED')"
+          [disabled]="isProcessing() || loadingEvaluation() || impactedCount() === 0"
+        >
+          Refresh All Impacted ({{ impactedCount() }})
+        </button>
+
+        <button
+          class="btn btn--primary"
+          (click)="processSelectedIdentities('SELECTED')"
+          [disabled]="isProcessing() || loadingEvaluation() || selectedCount() === 0"
+        >
+          @if (isProcessing()) {
+            <span class="spinner"></span> Dispatching...
+          } @else {
+            Apply & Refresh Selected ({{ selectedCount() }})
+          }
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 4: Evaluated Identities Table -->
+    <div class="table-panel">
+      <!-- Filter and Search Header -->
+      <div class="table-panel__controls">
+        <div class="filter-tabs">
+          <button
+            class="tab-btn"
+            [class.tab-btn--active]="activeFilter() === 'ALL_IMPACTED'"
+            (click)="activeFilter.set('ALL_IMPACTED')"
+          >
+            All Impacted ({{ impactedCount() }})
+          </button>
+          <button
+            class="tab-btn tab-btn--gain"
+            [class.tab-btn--active]="activeFilter() === 'GAIN'"
+            (click)="activeFilter.set('GAIN')"
+          >
+            + Gaining ({{ gainCount() }})
+          </button>
+          <button
+            class="tab-btn tab-btn--lose"
+            [class.tab-btn--active]="activeFilter() === 'LOSE'"
+            (click)="activeFilter.set('LOSE')"
+          >
+            - Losing ({{ loseCount() }})
+          </button>
+          <button
+            class="tab-btn"
+            [class.tab-btn--active]="activeFilter() === 'RETAINED'"
+            (click)="activeFilter.set('RETAINED')"
+          >
+            Retained ({{ retainedCount() }})
+          </button>
+          <button
+            class="tab-btn"
+            [class.tab-btn--active]="activeFilter() === 'ALL'"
+            (click)="activeFilter.set('ALL')"
+          >
+            All ({{ evaluatedIdentities().length }})
+          </button>
+        </div>
+
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Search by name, email, department..."
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+          />
+          @if (searchQuery()) {
+            <button class="search-clear" (click)="searchQuery.set('')" aria-label="Clear search">
+              <svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Table View -->
+      @if (loadingEvaluation()) {
+        <div class="table-skeleton">
+          <p-skeleton height="3rem" class="mb-2" />
+          <p-skeleton height="3rem" class="mb-2" />
+          <p-skeleton height="3rem" class="mb-2" />
+          <p-skeleton height="3rem" />
+        </div>
+      } @else {
+        <p-table
+          [value]="filteredIdentities()"
+          [paginator]="filteredIdentities().length > 10"
+          [rows]="10"
+          [rowsPerPageOptions]="[10, 25, 50]"
+          styleClass="custom-datatable"
+          [tableStyle]="{ 'min-width': '55rem' }"
+        >
+          <ng-template #header>
+            <tr>
+              <th style="width: 3.5rem;">
+                <input
+                  type="checkbox"
+                  class="custom-checkbox"
+                  [checked]="allSelected()"
+                  (change)="toggleSelectAll($any($event.target).checked)"
+                  title="Select / Deselect all"
+                />
+              </th>
+              <th>Identity</th>
+              <th>Email</th>
+              <th>Department / Title</th>
+              <th>Connected Sources</th>
+              <th>Simulated Impact</th>
+              <th>Criteria Evaluation</th>
+              <th style="width: 7rem; text-align: center;">Action</th>
+            </tr>
+          </ng-template>
+
+          <ng-template #body let-item>
+            <tr [class.row-highlight-gain]="item.changeType === 'GAIN'" [class.row-highlight-lose]="item.changeType === 'LOSE'">
+              <td>
+                <input
+                  type="checkbox"
+                  class="custom-checkbox"
+                  [checked]="item.selected"
+                  (change)="toggleRowSelection(item)"
+                />
+              </td>
+              <td>
+                <div class="user-cell">
+                  <p-avatar [label]="initials(item.name)" shape="circle" styleClass="user-avatar" />
+                  <div class="user-info">
+                    <span class="user-name">{{ item.name }}</span>
+                    @if (item.alias) {
+                      <span class="user-alias">{{ item.alias }}</span>
+                    }
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="cell-email">{{ item.email || '-' }}</span>
+              </td>
+              <td>
+                <div class="dept-cell">
+                  <span class="dept-name">{{ item.department }}</span>
+                  <span class="title-name">{{ item.title }}</span>
+                </div>
+              </td>
+              <td>
+                <div class="sources-list">
+                  @for (s of item.sources; track s) {
+                    <span class="source-chip">{{ s }}</span>
+                  }
+                  @if (item.sources.length === 0) {
+                    <span class="text-muted">-</span>
+                  }
+                </div>
+              </td>
+              <td>
+                @switch (item.changeType) {
+                  @case ('GAIN') {
+                    <span class="impact-badge impact-badge--gain">
+                      <span class="impact-badge__dot"></span> + Will Gain Role
+                    </span>
+                  }
+                  @case ('LOSE') {
+                    <span class="impact-badge impact-badge--lose">
+                      <span class="impact-badge__dot"></span> - Will Lose Role
+                    </span>
+                  }
+                  @case ('RETAINED') {
+                    <span class="impact-badge impact-badge--retained">
+                      <span class="impact-badge__dot"></span> = Retained
+                    </span>
+                  }
+                  @default {
+                    <span class="impact-badge impact-badge--neutral">Unaffected</span>
+                  }
+                }
+              </td>
+              <td>
+                <div class="reasons-list">
+                  @for (r of item.reasons; track r) {
+                    <div class="reason-item" [class.reason-item--fail]="isReasonFail(r)">
+                      <span class="reason-item__tag">{{ isReasonFail(r) ? 'MISMATCH' : 'MATCH' }}</span>
+                      <span class="reason-item__text">{{ formatReasonText(r) }}</span>
+                    </div>
+                  }
+                </div>
+              </td>
+              <td style="text-align: center;">
+                <button
+                  class="row-action-btn"
+                  (click)="processSingleIdentity(item.id)"
+                  [disabled]="isProcessing()"
+                  title="Run targeted identity processing for this user"
+                >
+                  Refresh
+                </button>
+              </td>
+            </tr>
+          </ng-template>
+
+          <ng-template #emptymessage>
+            <tr>
+              <td colspan="8" class="empty-cell">
+                <div class="empty-state">
+                  <div class="empty-state__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="11" cy="11" r="8"/>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                  </div>
+                  <h4>No identities match the current view</h4>
+                  <p>Try switching filter tabs or clearing your search query.</p>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      }
+    </div>
+  }
+</div>

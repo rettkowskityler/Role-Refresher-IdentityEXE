@@ -1,0 +1,7 @@
+{
+  "status": {
+    "pending": "Pending",
+    "ready": "Ready",
+    "failed": "Failed"
+  }
+}

@@ -1,0 +1,28 @@
+{
+    "version": 1,
+    "manifest": {
+        "alias": "role-refresher-identityexe",
+        "name": {
+            "en": "IdentityEXE Role Refresher"
+        },
+        "description": {
+            "en": "IdentityEXE Role Membership & Apply Changes Simulator"
+        },
+        "apiScopes": [
+            "sp:scopes:all"
+        ],
+        "contentSecurityPolicies": {},
+        "permissionPolicy": {},
+        "iframeAllow": {},
+        "state": "ENABLED",
+        "slots": [
+            {
+                "slotId": "full-page"
+            }
+        ]
+    },
+    "build": {
+        "outDir": "./dist/role-refresher-identityexe/browser",
+        "port": 4200
+    }
+}

@@ -1,0 +1,33 @@
+<div class="shell">
+  <main class="shell-content">
+    <header class="shell-content__header">
+      <div class="shell-content__header-left">
+        <div class="brand-bar">
+          <img src="./branding/IdentityEXE2-05.svg" alt="IdentityEXE Logo" class="brand-logo" />
+          <div class="brand-divider"></div>
+          <div class="brand-text">
+            <h1 class="spds-h4">{{ title() }}</h1>
+            <span class="shell-subtitle">ISC Role Membership & "Apply Changes" Impact Auditor</span>
+          </div>
+        </div>
+      </div>
+      <div class="shell-content__meta">
+        <p-tag [value]="'status.' + status() | translate" [severity]="handshakeSeverity[status()]" />
+        @if (context(); as ctx) {
+          <span class="shell-content__context">
+            {{ ctx.tenant.org }} &middot; {{ ctx.user.displayName }}
+          </span>
+        }
+      </div>
+    </header>
+    <div class="shell-content__card">
+      <router-outlet />
+    </div>
+    <footer class="shell-footer">
+      <div class="shell-footer__inner">
+        <img src="./branding/IdentityEXE2-09.svg" alt="IdentityEXE Mark" class="footer-icon" />
+        <span><strong class="footer-brand">IdentityEXE</strong> &bull; Enterprise SailPoint Architecture Blueprint</span>
+      </div>
+    </footer>
+  </main>
+</div>
